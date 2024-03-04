@@ -1,4 +1,4 @@
-import requests
+import requests, json
 from bs4 import BeautifulSoup
 import time
 
@@ -34,7 +34,33 @@ try:
                 #more_details = title_details.find_all("li", class_="list-group-item")
                 for detail in title_details:
                     one_detail = detail.text.strip()
-                    print("This is one detail" + one_detail)        
+                    if (one_detail.find("Released")>=0):
+                        game_release_date = one_detail[10:]
+                        print(game_release_date)
+                    elif (one_detail.find("Platforms")>=0):
+                        game_platforms = one_detail[11:]
+                        print(game_platforms)
+                    else:
+                        continue
+                
+                #table extract of historic prices
+                #table = new_soup.find('table', attrs={'class':'subs noBorders evenRows'})
+                #table_rows = table.find_all('tr')
+                script = new_soup.find(id = "price_history_data")
+                game_price_history_jsonObj = json.loads(script.contents[0])
+                game_price_history = game_price_history_jsonObj['data']
+
+                for price_point in game_price_history:
+                    #print("what is this" + price_point[0]) 
+                    print(price_point) # this is an array of price points at a given date
+                #for a in game_price_history_jsonObj['data']:
+                #    print(a)
+                    #for b in a['data']:
+                    #    print(b)
+
+                #print(json.loads(script.contents[0]))
+
+                    #print("This is one detail" + one_detail)        
 
             get_title_details(game_url)
             game_title = title.find("div", class_="h6 name")
