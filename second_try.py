@@ -1,6 +1,7 @@
 import requests, json
 from bs4 import BeautifulSoup
 import time
+from datetime import datetime
 
 url = "https://www.dekudeals.com/eshop-sales?filter[since]=2024-02-29&sort=metacritic"
 headers = {"User-Agent": "Your User Agent String"}
@@ -16,6 +17,8 @@ try:
     #print(deal_titles.prettify())
 
     parsed_titles = []
+    more_game_details = []
+
     if not deal_titles:
         print("No deal titles found. Check the HTML structure.")
     else:
@@ -29,9 +32,8 @@ try:
                 new_headers = {"User-Agent": "Your User Agent String"}
                 new_response = requests.get(var_game_url, headers=new_headers)
                 new_soup = BeautifulSoup(new_response.content, "html.parser")
-                #title_details = soup.find("ul", class_="details list-group list-group-flush")
+                this_game_details = []
                 title_details = new_soup.find_all("li", class_="list-group-item")
-                #more_details = title_details.find_all("li", class_="list-group-item")
                 for detail in title_details:
                     one_detail = detail.text.strip()
                     if (one_detail.find("Released")>=0):
@@ -41,28 +43,57 @@ try:
                         game_platforms = one_detail[11:]
                         print(game_platforms)
                     else:
-                        continue
+                        continue                
                 
-                #table extract of historic prices
-                #table = new_soup.find('table', attrs={'class':'subs noBorders evenRows'})
-                #table_rows = table.find_all('tr')
                 script = new_soup.find(id = "price_history_data")
                 game_price_history_jsonObj = json.loads(script.contents[0])
                 game_price_history = game_price_history_jsonObj['data']
 
+                my_curated_price_list = []
                 for price_point in game_price_history:
                     #print("what is this" + price_point[0]) 
-                    print(price_point) # this is an array of price points at a given date
-                #for a in game_price_history_jsonObj['data']:
-                #    print(a)
-                    #for b in a['data']:
-                    #    print(b)
+                    #print(type(price_point))
+                    if not my_curated_price_list:
+                        my_curated_price_list.append(price_point)
+                        #print(price_point)
+                    else:
+                        if my_curated_price_list[-1][1:] == price_point[1:]:
+                            continue
+                        else:
+                            my_curated_price_list.append(price_point)
+                            #print(price_point)
+                this_game_details.append([game_release_date, game_platforms, my_curated_price_list])
+                return this_game_details
+            
+                #print(price_point[1:]) # this is an array of price points at a given date
+                #print(my_curated_price_list)
+            
+            more_game_details = get_title_details(game_url)
+            game_price_history = more_game_details[0][2]
+            #print(more_game_details[0][2])
 
-                #print(json.loads(script.contents[0]))
+            
+            # How long it takes for the first discount
+            def time_for_first_discount(game_price_history):
+                print(len(game_price_history))
+                if(len(game_price_history)>=2):
+                    #print(1)
+                    print("First price: " + game_price_history[0][0])
+                    print("First discount: " + game_price_history[1][0])
+                    d1 = datetime.strptime(game_price_history[0][0], "%Y-%m-%d")
+                    d2 = datetime.strptime(game_price_history[1][0], "%Y-%m-%d")
+                    return abs((d2 - d1).days)
+                else:
+                    return 0
+                
+            days_for_first_discount = time_for_first_discount(game_price_history)
+            print(days_for_first_discount)
 
-                    #print("This is one detail" + one_detail)        
+            # How often it gives a discount
+                            
+            # How long does a discount last
 
-            get_title_details(game_url)
+            
             game_title = title.find("div", class_="h6 name")
             print(game_title.text.strip())
             game_title = game_title.text.strip()
@@ -82,8 +113,7 @@ try:
                     print("No metacritic score found. Check the HTML structure.")
             game_metacritic_score = game_metacritic_score.text.strip()
             parsed_titles.append([game_title, game_price, game_discount, game_discount_per, game_metacritic_score])
-
-
+            break
         #print(parsed_titles)
 
 
