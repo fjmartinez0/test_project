@@ -7,6 +7,7 @@ url = "https://www.dekudeals.com/eshop-sales?filter[since]=2024-02-29&sort=metac
 headers = {"User-Agent": "Your User Agent String"}
 
 
+
 try:
     response = requests.get(url, headers=headers)
     response.raise_for_status()  # Check for HTTP errors
