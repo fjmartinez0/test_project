@@ -4,24 +4,11 @@ import time
 from datetime import datetime
 
 # Define the website to be crawled
-url = "https://www.dekudeals.com/eshop-sales?filter[since]=2024-02-29&sort=metacritic"
+#url = "https://www.dekudeals.com/eshop-sales?filter[since]=2024-02-29&sort=metacritic"
+#url = "https://www.dekudeals.com/games?filter%5Bcritic_score%5D=50&filter%5Bstore%5D=eshop_ca&filter%5Brelease_year%5D=2023&sort=metacritic&page_size=all"
+url = "https://www.dekudeals.com/games?filter%5Bprice_range%5D%5Bmin%5D=32&filter%5Bprice_range%5D%5Bmax%5D=34&filter%5Bcritic_score%5D=50&filter%5Bstore%5D=eshop_ca&filter%5Brelease_year%5D=2023&sort=metacritic&page_size=all&filter%5Besrb%5D=t"
 headers = {"User-Agent": "Your User Agent String"}
 
-
-def get_game_highlevel_details(game_title):
-    #print(game_title.text.strip())
-    this_game_name = game_title.find("div", class_="h6 name").text.strip()    
-    this_game_price = game_title.find("s", class_="text-muted").text.strip()
-    this_game_discount = game_title.find("strong", class_="").text.strip()
-    this_game_discount_per = game_title.find("span", class_="align-text-bottom").text.strip()
-        
-    this_game_metacritic_score = game_title.find("span", class_="text-white p-1 rounded bg-success").text.strip()
-    if not this_game_metacritic_score:
-        this_game_metacritic_score = game_title.find("span", class_="text-white p-1 rounded bg-warning").text.strip()
-        if not this_game_metacritic_score:
-            print("No metacritic score found. Check the HTML structure.")
-
-    return [this_game_name, this_game_price, this_game_discount, this_game_discount_per, this_game_metacritic_score]
 
 def get_game_price_history_data(json_script_pricedata):
 
@@ -46,7 +33,7 @@ def get_game_price_history_data(json_script_pricedata):
                 my_price_change_dates.append(current_price_point[0])
     return my_curated_price_list, my_price_change_dates
 
- # How long it takes for the first discount
+# How long it takes for the first discount
 def get_days_for_first_discount(game_price_history):
     #print(len(game_price_history))
     if(len(game_price_history)>=2):
@@ -117,11 +104,16 @@ def get_game_details(var_game_url):
         current_detail_string = detail.text.strip()
         if (current_detail_string.find("Released")>=0):
             game_release_date = current_detail_string[10:]
-            print(game_release_date)
+            #print(game_release_date)
         elif (current_detail_string.find("Platforms")>=0):
             game_platforms = current_detail_string[11:]
+        elif (current_detail_string.find("MSRP")>=0):
+            game_price = current_detail_string[6:]
+        elif (current_detail_string.find("Metacritic")>=0):
+            game_metacritic = current_detail_string[12:]
         else:
             continue
+    #print("Data so far: " + game_price + "-" + game_metacritic)
     
     # Process the price history data from a json object within the HTML
     json_script_pricedata = soup.find(id = "price_history_data")
@@ -129,7 +121,7 @@ def get_game_details(var_game_url):
     game_days_for_first_discount =  get_days_for_first_discount(game_price_history_data)
     game_avg_days_for_price_change = discounts_analysis(game_price_history_data, game_price_history_dates)
 
-    this_game_details.append([game_release_date, game_platforms, game_price_history_data, game_price_history_dates, 
+    this_game_details.append([game_price, game_metacritic, game_release_date, game_platforms, game_price_history_data, game_price_history_dates, 
                               game_days_for_first_discount, game_avg_days_for_price_change])
     return this_game_details
 
@@ -149,13 +141,17 @@ def main():
         if not game_titles_list:
             print("No deal titles found. Check the HTML structure.")
         else:
+            #print(len(game_titles_list))
             for game_title in game_titles_list:
                 game_url = 'https://www.dekudeals.com' + game_title.find("a", class_="main-link").get('href')
                 print(game_url)
                 
-                game_highlevel_data = get_game_highlevel_details(game_title)
-                game_more_details = get_game_details(game_url)
-                
+                game_name = game_title.find("div", class_="h6 name").text.strip()
+                print(game_name)
+
+                game_details = get_game_details(game_url)
+                print(game_details)
+
                 #games_data.append(game_highlevel_data, game_more_details)
                 
                 #print(games_data[-1])
